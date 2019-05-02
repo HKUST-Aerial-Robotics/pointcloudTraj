@@ -41,5 +41,6 @@ If you use this planning framework for your academic research, please cite our r
 The source code is released under [GPLv3](http://www.gnu.org/licenses/) license.
 
 ## 8.Notes
+- I would complete the readme soon.
 - The code has not been deeply tested, if you find any problems, do not hesitate to raise a issue or write e-mail to me.
 - The code is written for research purpose and has not been fully optimized.
