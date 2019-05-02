@@ -1,0 +1,126 @@
+<launch>  
+<arg name="init_x" default="-45.0"/>
+<arg name="init_y" default="-45.0"/>
+<arg name="init_z" default=" 2.0"/>
+
+<arg name="end_x" default=" 30.0"/>
+<arg name="end_y" default=" 30.0"/>
+<arg name="end_z" default=" 2.0"/>
+
+<node pkg="waypoint_generator" name="waypoint_generator" type="waypoint_generator" output="screen">
+        <remap from="~odom" to="/odom/fake_odom"/>        
+        <remap from="~goal" to="/goal"/>
+        <param name="waypoint_type" value="manual"/>    
+</node>
+ 
+<node name   ="sim_planning_demo" pkg ="pointcloudTraj" type   ="sim_planning_demo" output = "screen" required="true">        
+        <remap from="~waypoints"       to="/waypoint_generator/waypoints"/>
+        <remap from="~odometry"        to="/odom/fake_odom"/>
+        <remap from="~PointCloud"      to="/map_server/local_map" />
+        <remap from="~position_cmd"    to="/position_cmd"  />
+
+        <param name="mapBoundary/lower_x"   value="-50.0"/>
+        <param name="mapBoundary/upper_x"   value=" 50.0"/>
+        <param name="mapBoundary/lower_y"   value="-50.0"/>
+        <param name="mapBoundary/upper_y"   value=" 50.0"/>
+        <param name="mapBoundary/lower_z"   value="  0.0"/>
+        <param name="mapBoundary/upper_z"   value="  4.0"/>
+
+        <param name="planParam/plan_rate"        value=" 10.0"/>
+        <param name="planParam/safety_margin"    value="0.5" />
+        <param name="planParam/search_margin"    value="0.0" />
+        <param name="planParam/max_radius"       value="5.0" />
+        <param name="planParam/sensing_range"    value="30.0" />
+        <param name="planParam/refine_portion"   value="0.7"  />
+        <param name="planParam/sample_portion"   value="0.3" />
+        <param name="planParam/goal_portion"     value="0.05" />
+        <param name="planParam/path_find_limit"  value="0.1" />
+        <param name="planParam/max_samples"      value="50000" />
+        <param name="planParam/stop_horizon"     value="2.0"  />
+        <param name="planParam/commitTime"       value="5.0"/>
+
+        <param name="dynamic/vec"           value="8.0"/>
+        <param name="dynamic/acc"           value="4.0"/>
+        <param name="dynamic/max_vec"       value="4.0"/>
+        <param name="dynamic/max_acc"       value="2.5"/>
+
+        <param name="optimization/poly_order_min" value="4"/>  <!-- min order for the smallest piece of the trajectory -->
+        <param name="optimization/poly_order_max" value="8"/>  <!-- max order for the largest piece of the trajectory -->
+        <param name="optimization/minimize_order" value="3"/>  <!-- 3 for minimize jerk, 2 for minimize acceleration -->
+
+        <param name="demoParam/target_x"     value="$(arg end_x)" />
+        <param name="demoParam/target_y"     value="$(arg end_y)" />
+        <param name="demoParam/target_z"     value="$(arg end_z)" />
+        <param name="demoParam/goal_input"   value="false" />
+        <param name="demoParam/is_limit_vel" value="true"  />
+        <param name="demoParam/is_limit_acc" value="false" />
+</node>
+ 
+ <node name="rviz" pkg="rviz" type="rviz" output="screen"
+       args="-d $(find pointcloudTraj)/launch/rviz_config/rviz_config.rviz"> 
+</node>
+
+<node name ="map_server" pkg ="pointcloudTraj" type ="map_server" output = "screen">    
+        <remap from="~odometry" to="/odom/fake_odom"/>
+        <remap from="~PointCloud" to="/random_map/all_map"/>
+        <param name="LocalSensing/radius" value="30.0"/>        
+        <param name="LocalSensing/rate"   value="10.0"/>        
+        <param name="LocalSensing/std"    value="0.15"/>        
+</node>
+
+<node pkg = "pointcloudTraj" type = "traj_server" output = "screen" name = "trajectory_server">
+        <remap  from = "~trajectory"        to = "/sim_planning_demo/trajectory"/>
+        <remap  from = "~odometry"          to = "/odom/fake_odom"/>
+        <remap  from = "~position_command"  to = "/position_cmd"/>
+
+        <param name="optimization/poly_order_min"           value="4"/> 
+        <param name="optimization/poly_order_max"           value="8"/> 
+</node>
+
+<node pkg  = "pointcloudTraj" type = "odom_generator" output = "screen" name = "odom_generator">    
+  <remap from = "~odometry"  to = "/odom/fake_odom"/>
+  <remap from = "~command"   to = "/position_cmd"/>
+  <param name="init_x"  value="$(arg init_x)"/>
+  <param name="init_y"  value="$(arg init_y)"/>
+  <param name="init_z"  value="$(arg init_z)"/>
+</node>
+
+<node pkg="odom_visualization" name="odom_visualization" type="odom_visualization" output="screen">
+        <remap from="~cmd"  to="/position_cmd"/>
+        <param name="color/a" value="0.8"/>    
+        <param name="color/r" value="1.0"/>        
+        <param name="color/g" value="0.0"/>        
+        <param name="color/b" value="0.0"/>       
+        <param name="covariance_scale" value="100.0"/>   
+        <param name="robot_scale" value="1.0"/>       
+        <param name="frame_id"    value="map"/>      
+</node>
+
+<node name ="random_map" pkg ="pointcloudTraj" type ="random_map" output = "screen">    
+        <remap from="~odometry"     to="/odom/fake_odom"/>    
+
+        <param name="mapBoundary/lower_x"      value="-50.0"/>
+        <param name="mapBoundary/upper_x"      value=" 50.0"/>
+        <param name="mapBoundary/lower_y"      value="-50.0"/>
+        <param name="mapBoundary/upper_y"      value=" 50.0"/>
+        <param name="mapBoundary/lower_z"      value="  0.0"/>
+        <param name="mapBoundary/upper_z"      value="  3.0"/>
+
+        <param name="ObstacleShape/lower_rad"  value=" 0.6" />
+        <param name="ObstacleShape/upper_rad"  value=" 3.2" />
+        <param name="ObstacleShape/lower_hei"  value=" 1.0" />
+        <param name="ObstacleShape/upper_hei"  value=" 10.0"/>        
+
+        <param name="has_ground"               value=" false"/>  
+        <param name="sensing_radius"           value=" 20.0" />        
+        <param name="ObstacleNum"              value=" 600"  />        
+        <param name="Resolution"               value=" 0.2"  />                
+        <param name="SensingRate"              value=" 10.0" />
+        <param name="Origin_clearance"         value=" 2.0"  />
+        <param name="fov_vertical"             value=" 30.0" />        
+
+        <param name="init_x"  value="$(arg init_x)"/>
+        <param name="init_y"  value="$(arg init_y)"/>
+</node>
+
+ </launch>
