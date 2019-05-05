@@ -35,8 +35,7 @@ If you use this planning framework for your academic research, please cite our r
 - The package 'odom_visualization' depends on [armadillo](http://arma.sourceforge.net/), which is a c++ linear algebra library. This package is not necessary and only used for visualization. You can install [armadillo] by:
 
 ```
-  sudo apt-get install libarmadillo-dev
-  
+  sudo apt-get install libarmadillo-dev 
 ```
  
 ## 3.Build on ROS
