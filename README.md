@@ -32,7 +32,7 @@ If you use this planning framework for your academic research, please cite our r
 ## 2.Prerequisities
 - Our testing environment: **Ubuntu** 16.04, **ROS** Kinetic.
 - We use **mosek** for solving quadratic program(QP). To use mosek, you should approve an academic license in [here](https://www.mosek.com/products/academic-licenses/). The academic license is free and is easy to approve. Then create a folder named 'mosek' in your home directory and put your license in it. All header and library files are already included in this repo, so you don't need to download mosek again. 
-- The package 'odom_visualization' depends on [armadillo](http://arma.sourceforge.net/), which is a c++ linear algebra library. This package is not necessary and only used for visualization. You can install [armadillo] by:
+- The package 'odom_visualization' depends on [armadillo](http://arma.sourceforge.net/), which is a c++ linear algebra library. This package is not necessary and only used for visualization. You can install 'armadillo' by:
 
 ```
   sudo apt-get install libarmadillo-dev 
