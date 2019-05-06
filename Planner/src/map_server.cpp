@@ -30,142 +30,78 @@ namespace backward {
 backward::SignalHandling sh;
 }
 
-pcl::search::KdTree<pcl::PointXYZ> kdtreeLocalMap;
-vector<int>     pointIdxRadiusSearch;
-vector<float>   pointRadiusSquaredDistance;        
+pcl::search::KdTree<pcl::PointXYZ> _kdtreeLocalMap;
+vector<int>     _pointIdxRadiusSearch;
+vector<float>   _pointRadiusSquaredDistance;        
 
 ros::Publisher _local_map_pub;
 ros::Subscriber _odom_sub, _cmd_sub, _map_sub;
 
-deque<nav_msgs::Odometry> _odom_queue;
-vector<double> _state;
-const size_t _odom_queue_size = 200;
-nav_msgs::Odometry _odom;
-
 double _sensing_rate, _sensing_range, _standard_deviation;
+bool _use_accumulate_map;
 
-//ros::Timer vis_map;
-bool map_ok = false;
+double _pos[3];
+bool _map_ok   = false;
 bool _has_odom = false;
 
-sensor_msgs::PointCloud2 localMap_pcd;
-pcl::PointCloud<pcl::PointXYZ> cloudMap;
-
-void rcvPointCloudCallBack(const sensor_msgs::PointCloud2 & pointcloud_map)
+pcl::PointCloud<pcl::PointXYZ> _cloud_all_map;
+void rcvPointCloudCallBack(const sensor_msgs::PointCloud2 & msg)
 {   
-    if(map_ok) 
-      return;
+    if( _map_ok ) 
+        return;
     
-    pcl::PointCloud<pcl::PointXYZ> cloudIn;
-    pcl::fromROSMsg(pointcloud_map, cloudIn);
-    ROS_WARN("[Map Server] received the random map ");
-    cout<<"map size: "<<cloudIn.size()<<endl;
+    pcl::PointCloud<pcl::PointXYZ> cloud_input;
+    pcl::fromROSMsg(msg, cloud_input);
     
     pcl::VoxelGrid<pcl::PointXYZ>  VoxelSampler;
-    pcl::PointCloud<pcl::PointXYZ> Cloud_DS;
-    
     VoxelSampler.setLeafSize(0.2f, 0.2f, 0.2f);
-    VoxelSampler.setInputCloud( cloudIn.makeShared() );      
-    VoxelSampler.filter( cloudMap );    
+    VoxelSampler.setInputCloud( cloud_input.makeShared() );      
+    VoxelSampler.filter( _cloud_all_map );    
 
-    //cloudMap = Cloud_DS;
-    kdtreeLocalMap.setInputCloud( cloudMap.makeShared() ); 
-    map_ok = true;
-
-    cout<<"map size: "<<cloudMap.size()<<endl;
+    _kdtreeLocalMap.setInputCloud( _cloud_all_map.makeShared() ); 
+    _map_ok = true;
 }
 
-void rcvCmdCallbck(const quadrotor_msgs::PositionCommand cmd)
+void rcvCmdCallbck(const quadrotor_msgs::PositionCommand & msg)
 {   
-    //cout<<"cmd"<<endl;
     _has_odom = true;
-    _odom.pose.pose.position.x = cmd.position.x;
-    _odom.pose.pose.position.y = cmd.position.y;
-    _odom.pose.pose.position.z = cmd.position.z;
-
-    _odom.twist.twist.linear.x = cmd.velocity.x;
-    _odom.twist.twist.linear.y = cmd.velocity.y;
-    _odom.twist.twist.linear.z = cmd.velocity.z;
-    _odom.header = cmd.header;
-
-    _odom.pose.pose.orientation.x = 0.0;
-    _odom.pose.pose.orientation.y = 0.0;
-    _odom.pose.pose.orientation.z = 0.0;
-    _odom.pose.pose.orientation.w = 1.0;
-
-    _state = {
-        _odom.pose.pose.position.x, 
-        _odom.pose.pose.position.y, 
-        _odom.pose.pose.position.z, 
-        _odom.twist.twist.linear.x,
-        _odom.twist.twist.linear.y,
-        _odom.twist.twist.linear.z,
-        0.0, 0.0, 0.0
-    };
-
-    _odom_queue.push_back(_odom);
-    while (_odom_queue.size() > _odom_queue_size) _odom_queue.pop_front();
+    _pos[0] = msg.position.x;
+    _pos[1] = msg.position.y;
+    _pos[2] = msg.position.z;
 }
 
-void rcvOdometryCallbck(const nav_msgs::Odometry odom)
+void rcvOdometryCallbck(const nav_msgs::Odometry & msg)
 {
-    _odom = odom;
     _has_odom = true;
-
-    _state = {
-        _odom.pose.pose.position.x, 
-        _odom.pose.pose.position.y, 
-        _odom.pose.pose.position.z, 
-        _odom.twist.twist.linear.x,
-        _odom.twist.twist.linear.y,
-        _odom.twist.twist.linear.z,
-        0.0, 0.0, 0.0
-    };
-    
-    _odom_queue.push_back(odom);
-    while (_odom_queue.size() > _odom_queue_size) _odom_queue.pop_front();       
+    _pos[0] = msg.pose.pose.position.x;
+    _pos[1] = msg.pose.pose.position.y;
+    _pos[2] = msg.pose.pose.position.z;
 }
 
-void compute (const pcl::PointCloud<pcl::PointXYZ> & input, pcl::PointCloud<pcl::PointXYZ> & output,
-         double standard_deviation)
-{
-    output.points.resize (input.points.size ());
-    output.header = input.header;
-    output.width  = input.width;
-    output.height = input.height;
-
-    boost::mt19937 rng; rng.seed (static_cast<unsigned int> (time (0)));
-    boost::normal_distribution<> nd (0, standard_deviation);
-    boost::variate_generator<boost::mt19937&, boost::normal_distribution<> > var_nor (rng, nd);
-
-    for (size_t point_i = 0; point_i < input.points.size (); ++point_i)
-    {
-        output.points[point_i].x = input.points[point_i].x + static_cast<float> (var_nor ());
-        output.points[point_i].y = input.points[point_i].y + static_cast<float> (var_nor ());
-        output.points[point_i].z = input.points[point_i].z + static_cast<float> (var_nor ());
-    }
-}
-
-pcl::PointCloud<pcl::PointXYZ> localMap, CloudDS;
-pcl::PointCloud<pcl::PointXYZ> output;
-pcl::VoxelGrid<pcl::PointXYZ>  VoxelSampler;
+pcl::PointCloud<pcl::PointXYZ> _local_map, _local_map_ds;
+pcl::VoxelGrid<pcl::PointXYZ>  _voxel_sampler;
+sensor_msgs::PointCloud2 _local_map_pcd;
 void pubSensedPoints()
 {     
-    if(!map_ok || !_has_odom)
+    if(!_map_ok || !_has_odom)
        return;
 
-    pcl::PointXYZ searchPoint(_state[0], _state[1], _state[2]);
-    pointIdxRadiusSearch.clear();
-    pointRadiusSquaredDistance.clear();
+    if( !_use_accumulate_map ){
+        _local_map.points.clear();
+    }
+
+    pcl::PointXYZ searchPoint(_pos[0], _pos[1], _pos[2]);
+    _pointIdxRadiusSearch.clear();
+    _pointRadiusSquaredDistance.clear();
     //ros::Time time_1 = ros::Time::now();
     pcl::PointXYZ pt;
 
-    if ( kdtreeLocalMap.radiusSearch (searchPoint, _sensing_range, pointIdxRadiusSearch, pointRadiusSquaredDistance) > 0 )
+    if ( _kdtreeLocalMap.radiusSearch (searchPoint, _sensing_range, _pointIdxRadiusSearch, _pointRadiusSquaredDistance) > 0 )
     {
-       for (size_t i = 0; i < pointIdxRadiusSearch.size (); ++i)
+       for (size_t i = 0; i < _pointIdxRadiusSearch.size (); ++i)
        {
-          pt = cloudMap.points[pointIdxRadiusSearch[i]];      
-          localMap.points.push_back(pt);
+          pt = _cloud_all_map.points[_pointIdxRadiusSearch[i]];      
+          _local_map.points.push_back(pt);
        }
     }
     else
@@ -175,26 +111,19 @@ void pubSensedPoints()
        return;
     }
 
-    localMap.width = localMap.points.size();
-    localMap.height = 1;
-    localMap.is_dense = true;
+    _local_map.width = _local_map.points.size();
+    _local_map.height = 1;
+    _local_map.is_dense = true;
 
-    VoxelSampler.setLeafSize(0.3f, 0.3f, 0.3f); 
-    VoxelSampler.setInputCloud( localMap.makeShared() );      
-    VoxelSampler.filter( CloudDS );   
+    _voxel_sampler.setLeafSize(0.3f, 0.3f, 0.3f); 
+    _voxel_sampler.setInputCloud( _local_map.makeShared() );      
+    _voxel_sampler.filter( _local_map_ds );   
 
-    localMap = CloudDS;
+    _local_map = _local_map_ds;
 
-    //compute (localMap, output, _standard_deviation);
-    //pcl::toROSMsg(output, localMap_pcd);
-
-    pcl::toROSMsg(localMap, localMap_pcd);
-    localMap_pcd.header.frame_id = "map";
-    _local_map_pub.publish(localMap_pcd);
-    
-    //cout<<"localMap size: "<<localMap.points.size()<<endl;
-    /*ros::Time time_2 = ros::Time::now();
-    ROS_WARN("[map server] time in publish a local map is %f", (time_2 - time_1).toSec());*/
+    pcl::toROSMsg(_local_map, _local_map_pcd);
+    _local_map_pcd.header.frame_id = "map";
+    _local_map_pub.publish(_local_map_pcd);
 }
 
 
@@ -207,11 +136,12 @@ int main (int argc, char** argv) {
 
       _odom_sub = n.subscribe( "odometry",  50, rcvOdometryCallbck );
       _cmd_sub  = n.subscribe( "command",   50, rcvCmdCallbck );
-      _map_sub  = n.subscribe( "PointCloud", 1, rcvPointCloudCallBack);
+      _map_sub  = n.subscribe( "pointCloud", 1, rcvPointCloudCallBack);
 
       n.param("LocalSensing/radius", _sensing_range, 20.0);
       n.param("LocalSensing/rate",   _sensing_rate, 10.0);
       n.param("LocalSensing/std",    _standard_deviation, 0.1);
+      n.param("LocalSensing/use_accumulate_map", _use_accumulate_map, false);
       
       ros::Rate loop_rate(_sensing_rate);
       

@@ -61,11 +61,13 @@
 </node> -->
 
 <node name ="map_server" pkg ="pointcloudTraj" type ="map_server" output = "screen">    
-        <remap from="~odometry" to="/odom/fake_odom"/>
-        <remap from="~PointCloud" to="/random_map/all_map"/>
+        <remap from="~odometry"   to="/odom/fake_odom"/>
+        <remap from="~pointCloud" to="/random_map/all_map"/>
+        
         <param name="LocalSensing/radius" value="30.0"/>        
         <param name="LocalSensing/rate"   value="10.0"/>        
         <param name="LocalSensing/std"    value="0.15"/>        
+        <param name="LocalSensing/use_accumulate_map"    value="false"/>        
 </node>
 
 <node pkg = "pointcloudTraj" type = "traj_server" output = "screen" name = "trajectory_server">

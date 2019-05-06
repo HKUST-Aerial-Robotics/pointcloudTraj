@@ -319,7 +319,7 @@ void planInitialTraj()
     double _path_time = (timeAft-timeBef).toSec();
 
     tie(_Path, _Radius) = _rrtPathPlaner.getPath();
-    if(_rrtPathPlaner.getPathExistStatus() == false){
+    if( _rrtPathPlaner.getPathExistStatus() == false ){
         ROS_WARN("[Demo] Can't find a path, mission stall, please reset the target");
         quadrotor_msgs::PolynomialTrajectory traj;
         traj.action = quadrotor_msgs::PolynomialTrajectory::ACTION_WARN_IMPOSSIBLE;
@@ -328,8 +328,7 @@ void planInitialTraj()
         _is_target_receive = false;
     }
     else{ // Path finding succeed .
-        if(trajGeneration( _Path, _Radius, _path_time ) == 1) {   
-            ROS_WARN("[Demo] trajectory generation succeed .");
+        if( trajGeneration( _Path, _Radius, _path_time ) == 1 ){   
             _commit_target = getCommitedTarget();
             _rrtPathPlaner.resetRoot(_commit_target);
             visBezierTrajectory(_PolyCoeff);
@@ -366,8 +365,6 @@ void planIncrementalTraj()
                 visBezierTrajectory(_PolyCoeff);
                 visCommitTraj(_PolyCoeff);
                 visCtrlPoint (_PolyCoeff);
-
-                cout<<"time in visualization: = "<<(ros::Time::now() - time_1).toSec()<<endl;
             }
         }
     }
@@ -828,24 +825,22 @@ void visCommitTraj(MatrixXd polyCoeff)
 
 void visBezierTrajectory(MatrixXd polyCoeff)
 {   
-    ROS_INFO("[Demo] Visualize the generated trajectory.");
     double traj_len = 0.0;
     int count = 0;
+
     Vector3d cur, pre;
     cur.setZero();
     pre.setZero();
     
-    double t_seg = 0.0;
-
     traj_pts_pcd.points.clear();
     for(int i = 0; i < _segment_num; i++ )
     {
-        for (double t = 0.0; t < 1.0; t += 0.02 / _Time(i), count += 1)
+        for (double t = 0.0; t <= _Time(i); t += 0.02, count += 1)
         {   
             Vector3d traj_pt;
-            getPosFromBezier( polyCoeff, t, i, traj_pt );
+            getPosFromBezier( polyCoeff, t / _Time(i), i, traj_pt );
+            
             PointXYZ point;
-
             cur(0) = point.x = _Time(i) * traj_pt(0);
             cur(1) = point.y = _Time(i) * traj_pt(1);
             cur(2) = point.z = _Time(i) * traj_pt(2);
@@ -855,8 +850,6 @@ void visBezierTrajectory(MatrixXd polyCoeff)
 
             traj_pts_pcd.points.push_back(point); 
         }
-
-        t_seg += _Time(i);
     }
 
     traj_pts_pcd.width = traj_pts_pcd.points.size();

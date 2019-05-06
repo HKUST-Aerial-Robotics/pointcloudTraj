@@ -17,7 +17,7 @@ Panels:
         - /Basic1
         - /Basic1/Robot1
         - /visPlanning1
-        - /Map1/AllMap1
+        - /Map1
         - /Map1/LocalMap1/Autocompute Value Bounds1
       Splitter Ratio: 0.522099018
     Tree Height: 636
@@ -126,36 +126,6 @@ Visualization Manager:
           Axis: Z
           Channel Name: intensity
           Class: rviz/PointCloud2
-          Color: 0; 255; 0
-          Color Transformer: FlatColor
-          Decay Time: 0
-          Enabled: true
-          Invert Rainbow: false
-          Max Color: 255; 255; 255
-          Max Intensity: 4096
-          Min Color: 0; 0; 0
-          Min Intensity: 0
-          Name: trajectory
-          Position Transformer: XYZ
-          Queue Size: 10
-          Selectable: true
-          Size (Pixels): 3
-          Size (m): 0.200000003
-          Style: Spheres
-          Topic: /sim_planning_demo/trajectory_points
-          Unreliable: false
-          Use Fixed Frame: true
-          Use rainbow: true
-          Value: true
-        - Alpha: 1
-          Autocompute Intensity Bounds: true
-          Autocompute Value Bounds:
-            Max Value: 10
-            Min Value: -10
-            Value: true
-          Axis: Z
-          Channel Name: intensity
-          Class: rviz/PointCloud2
           Color: 0; 0; 255
           Color Transformer: FlatColor
           Decay Time: 0
@@ -173,6 +143,36 @@ Visualization Manager:
           Size (m): 0.5
           Style: Spheres
           Topic: /sim_planning_demo/commit_target
+          Unreliable: false
+          Use Fixed Frame: true
+          Use rainbow: true
+          Value: true
+        - Alpha: 1
+          Autocompute Intensity Bounds: true
+          Autocompute Value Bounds:
+            Max Value: 10
+            Min Value: -10
+            Value: true
+          Axis: Z
+          Channel Name: intensity
+          Class: rviz/PointCloud2
+          Color: 0; 255; 0
+          Color Transformer: FlatColor
+          Decay Time: 0
+          Enabled: true
+          Invert Rainbow: false
+          Max Color: 255; 255; 255
+          Max Intensity: 4096
+          Min Color: 0; 0; 0
+          Min Intensity: 0
+          Name: trajectory
+          Position Transformer: XYZ
+          Queue Size: 10
+          Selectable: true
+          Size (Pixels): 3
+          Size (m): 0.200000003
+          Style: Spheres
+          Topic: /sim_planning_demo/trajectory_points
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
@@ -318,25 +318,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 11.9167213
+      Distance: 27.2243862
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 4.45008039
-        Y: 7.122684
-        Z: 29.3839455
+        X: 15.6076279
+        Y: 14.9638758
+        Z: 15.0300379
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 1.44979644
+      Pitch: 1.13479674
       Target Frame: map
       Value: Orbit (rviz)
-      Yaw: 4.56762409
+      Yaw: 5.1194582
     Saved:
       - Class: rviz/Orbit
         Distance: 52.3142014
