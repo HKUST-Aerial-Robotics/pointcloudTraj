@@ -48,6 +48,7 @@
         <param name="demoParam/goal_input"   value="true"  />
         <param name="demoParam/is_limit_vel" value="true"  />
         <param name="demoParam/is_limit_acc" value="false" />
+        <param name="demoParam/is_print"     value="false" />
 </node>
  
  <node name="rviz" pkg="rviz" type="rviz" output="screen"
@@ -105,7 +106,6 @@
         <param name="ObstacleShape/lower_hei"  value=" 1.0" />
         <param name="ObstacleShape/upper_hei"  value=" 10.0"/>        
 
-        <param name="has_ground"               value=" false"/>  
         <param name="sensing_radius"           value=" 20.0" />        
         <param name="ObstacleNum"              value=" 600"  />        
         <param name="Resolution"               value=" 0.2"  />                
@@ -115,6 +115,8 @@
 
         <param name="init_x"  value="$(arg init_x)"/>
         <param name="init_y"  value="$(arg init_y)"/>
+        <param name="end_x"   value="$(arg end_x)" />
+        <param name="end_y"   value="$(arg end_y)" />
 </node>
 
  </launch>

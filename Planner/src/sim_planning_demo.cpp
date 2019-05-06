@@ -53,7 +53,7 @@ double _x_l, _x_h, _y_l, _y_h, _z_l, _z_h;  // For random map simulation : map b
 double _refine_portion, _path_find_limit, _sample_portion, _goal_portion;
 double _safety_margin, _search_margin, _max_radius, _sensing_range, _planning_rate, _stop_time, _time_commit;
 int    _minimize_order, _poly_order_min, _poly_order_max, _max_samples;
-bool   _use_preset_goal, _is_limit_vel, _is_limit_acc;
+bool   _use_preset_goal, _is_limit_vel, _is_limit_acc, _is_print;
 
 /*  useful global variables  */
 Vector3d _start_pos, _start_vel, _start_acc, _commit_target, _end_pos;      
@@ -80,12 +80,10 @@ VectorXd _Radius;
 
 vector<MatrixXd> _FMList;
 vector<VectorXd> _CList, _CvList, _CaList;
-
 sensor_msgs::PointCloud2 traj_pts, target_pts, traj_commit_pts, traj_stop_pts;
+PointCloud<PointXYZ> traj_pts_pcd, target_pts_pcd, traj_commit_pts_pcd, traj_stop_pts_pcd;
 visualization_msgs::MarkerArray path_vis;
 visualization_msgs::MarkerArray ctrlPt_vis;
-PointCloud<PointXYZ> traj_pts_pcd, target_pts_pcd, traj_commit_pts_pcd, traj_stop_pts_pcd;
-
 safeRegionRrtStar _rrtPathPlaner;
 TrajectoryOptimizerSOCP _trajectoryGeneratorSocp;
 
@@ -101,11 +99,8 @@ void visCtrlPoint(MatrixXd polyCoeff);
 void visFlightCorridor(MatrixXd path, VectorXd radius);
 void visRrt(vector<NodePtr> nodes);
 
-inline Vector3d getPosFromBezier(const MatrixXd & polyCoeff,  double t_now, int seg_now );
-inline VectorXd getStateFromBezier(const MatrixXd & polyCoeff,  double t_now, int seg_now );
-inline double getDis(Vector3d p1, Vector3d p2){
-      return sqrt( pow(p1(0) - p2(0), 2) + pow(p1(1) - p2(1), 2) + pow(p1(2) - p2(2), 2) );
-}
+void getPosFromBezier(const MatrixXd & polyCoeff,  const double & t_now, const int & seg_now, Vector3d & ret);
+void getStateFromBezier(const MatrixXd & polyCoeff,  const double & t_now, const int & seg_now, VectorXd & ret);
 
 void rcvWaypointsCallBack(const nav_msgs::Path & wp)
 {   
@@ -138,6 +133,14 @@ void rcvOdometryCallBack(const nav_msgs::Odometry odom)
 
     _rcv_odom_time = ros::Time::now();
     _rrtPathPlaner.setStartPt(_start_pos, _end_pos);  
+
+    const static auto getDis = []( const Vector3d u, const Vector3d v ){
+        const static auto sq = [] (double && val){ 
+            return val * val;
+        };
+
+        return sqrt( sq(v[0] - u[0]) + sq(v[1] - u[1]) + sq(v[2] - u[2])  );
+    };
 
     if( _is_traj_exist && getDis(_start_pos, _commit_target) < _eps )
         _is_target_arrive = true;
@@ -195,12 +198,14 @@ int trajGeneration(MatrixXd path, VectorXd radius, double time_odom_delay)
         int idx;
         for (idx = 0; idx < _segment_num; ++idx){
             if (t_s > _Time(idx) && idx + 1 < _segment_num)
-                t_s -= _Time(idx);
+                t_s -= _Time(idx); 
             else break;
         }
 
         t_s /= _Time(idx);
-        VectorXd state = getStateFromBezier(_PolyCoeff, t_s, idx);
+
+        VectorXd state;
+        getStateFromBezier(_PolyCoeff, t_s, idx, state);
 
         for(int i = 0; i < 3; i++ ){
             pos(0, i) = state(i) * _Time(idx);
@@ -238,7 +243,7 @@ int trajGeneration(MatrixXd path, VectorXd radius, double time_odom_delay)
     ros::Time time_1 = ros::Time::now();
     
     _PolyCoeff = _trajectoryGeneratorSocp.BezierConicOptimizer(  
-                path, radius, _Time, _poly_orderList, _FMList, pos, vel, acc, _vel_max, _acc_max, _minimize_order, 1, 1);
+                path, radius, _Time, _poly_orderList, _FMList, pos, vel, acc, _vel_max, _acc_max, _minimize_order, _is_limit_vel, _is_limit_acc, _is_print);
     
     _start_time = _odom_time + ros::Duration(ros::Time::now() - _rcv_odom_time);
     ros::Time time_2 = ros::Time::now();
@@ -261,7 +266,6 @@ int trajGeneration(MatrixXd path, VectorXd radius, double time_odom_delay)
     }
 
     _traj_id ++;
-    ROS_WARN("[Demo] Trajecotry time: %f", (time_2 - time_1).toSec());
     return 1;
 }
 
@@ -287,8 +291,10 @@ Eigen::Vector3d getCommitedTarget()
     t_s /= _Time(idx);
 
     double t_start = t_s;
-    Eigen::Vector3d coord_t = _Time(idx) * getPosFromBezier(_PolyCoeff, t_start, idx);
+    Eigen::Vector3d coord_t;
+    getPosFromBezier(_PolyCoeff, t_start, idx, coord_t);
 
+    coord_t *= _Time(idx);
     target_pts_pcd.clear();
     target_pts_pcd.points.push_back(PointXYZ(coord_t(0), coord_t(1), coord_t(2)));    
     target_pts_pcd.width = target_pts_pcd.points.size();
@@ -326,7 +332,6 @@ void planInitialTraj()
             ROS_WARN("[Demo] trajectory generation succeed .");
             _commit_target = getCommitedTarget();
             _rrtPathPlaner.resetRoot(_commit_target);
-
             visBezierTrajectory(_PolyCoeff);
             visCommitTraj(_PolyCoeff);
             visCtrlPoint( _PolyCoeff );
@@ -353,12 +358,16 @@ void planIncrementalTraj()
         else{   
             visFlightCorridor( _Path, _Radius);
             _plan_traj_time = ros::Time::now();
-            if(trajGeneration( _Path, _Radius, (_plan_traj_time - _rcv_odom_time).toSec() ) == 1) { // Generate a new trajectory sucessfully.
+            if( trajGeneration( _Path, _Radius, (_plan_traj_time - _rcv_odom_time).toSec() ) == 1) { // Generate a new trajectory sucessfully.
                 _commit_target = getCommitedTarget();   
                 _rrtPathPlaner.resetRoot(_commit_target);  
+
+                ros::Time time_1 = ros::Time::now();
                 visBezierTrajectory(_PolyCoeff);
                 visCommitTraj(_PolyCoeff);
                 visCtrlPoint (_PolyCoeff);
+
+                cout<<"time in visualization: = "<<(ros::Time::now() - time_1).toSec()<<endl;
             }
         }
     }
@@ -402,8 +411,8 @@ int main (int argc, char** argv)
     node_handle.param("planParam/stop_horizon",     _stop_time,       0.50);     
     node_handle.param("planParam/commitTime",       _time_commit,      1.0);
 
-    node_handle.param("dynamic/vec",       _vel_mean,  2.0);
-    node_handle.param("dynamic/acc",       _acc_mean,  1.0);
+    node_handle.param("dynamic/vec",       _vel_mean, 2.0);
+    node_handle.param("dynamic/acc",       _acc_mean, 1.0);
     node_handle.param("dynamic/max_vec",   _vel_max,  3.0);
     node_handle.param("dynamic/max_acc",   _acc_max,  1.5);
 
@@ -415,15 +424,16 @@ int main (int argc, char** argv)
     node_handle.param("mapBoundary/upper_z", _z_h,    3.0);
     
     node_handle.param("optimization/poly_order_min", _poly_order_min,  5);
-    node_handle.param("optimization/poly_order_max", _poly_order_max,  10);
+    node_handle.param("optimization/poly_order_max", _poly_order_max, 10);
     node_handle.param("optimization/minimize_order", _minimize_order,  3);
     
-    node_handle.param("demoParam/target_x",       _end_pos(0),      0.0);
-    node_handle.param("demoParam/target_y",       _end_pos(1),      0.0);
-    node_handle.param("demoParam/target_z",       _end_pos(2),      0.0);
-    node_handle.param("demoParam/goal_input",     _use_preset_goal, true);
-    node_handle.param("demoParam/is_limit_vel",   _is_limit_vel,    true);
-    node_handle.param("demoParam/is_limit_acc",   _is_limit_acc,    true);
+    node_handle.param("demoParam/target_x",     _end_pos(0),       0.0);
+    node_handle.param("demoParam/target_y",     _end_pos(1),       0.0);
+    node_handle.param("demoParam/target_z",     _end_pos(2),       0.0);
+    node_handle.param("demoParam/goal_input",   _use_preset_goal, true);
+    node_handle.param("demoParam/is_limit_vel", _is_limit_vel,    true);
+    node_handle.param("demoParam/is_limit_acc", _is_limit_acc,    true);
+    node_handle.param("demoParam/is_print",     _is_print,        true);
 
     Bernstein _bernstein;
     if(_bernstein.setParam(_poly_order_min, _poly_order_max, _minimize_order) == -1){
@@ -540,7 +550,7 @@ VectorXd timeAllocation( MatrixXd sphere_centers, VectorXd sphere_radius, Vector
     int ball_num = sphere_centers.rows();
     MatrixXd check_pt( ball_num - 1 , 3 );
 
-    const static auto getdist = []( const Vector3d u, const Vector3d v ){
+    const static auto getDis = []( const Vector3d u, const Vector3d v ){
           const static auto sq = [] (double && val){ 
                 return val * val;
             };
@@ -559,7 +569,7 @@ VectorXd timeAllocation( MatrixXd sphere_centers, VectorXd sphere_radius, Vector
         center <<  sphere_centers(index, 0), sphere_centers(index, 1), sphere_centers(index, 2); 
         radius  =  sphere_radius[index];
 
-        double dist = getdist(last_center, center);  
+        double dist = getDis(last_center, center);  
         
         Vector3d delta_Vec = center - last_center;
         Eigen::Vector3d joint_pt;
@@ -620,9 +630,9 @@ VectorXd timeAllocation( MatrixXd sphere_centers, VectorXd sphere_radius, Vector
     return time_allocate;
 }
 
-inline VectorXd getStateFromBezier(const MatrixXd & polyCoeff,  double t_now, int seg_now )
+inline void getStateFromBezier(const MatrixXd & polyCoeff,  const double & t_now, const int & seg_now, VectorXd & ret)
 {
-    VectorXd ret = VectorXd::Zero(9);
+    ret = VectorXd::Zero(9);
     VectorXd ctrl_now = polyCoeff.row(seg_now);
 
     int order = _poly_orderList[seg_now];
@@ -645,24 +655,20 @@ inline VectorXd getStateFromBezier(const MatrixXd & polyCoeff,  double t_now, in
         }
 
     }
-    return ret;  
 }
 
-inline Vector3d getPosFromBezier(const MatrixXd & polyCoeff,  double t_now, int seg_now )
+inline void getPosFromBezier(const MatrixXd & polyCoeff,  const double & t_now, const int & seg_now, Vector3d & ret)
 {
-    Vector3d ret = VectorXd::Zero(3);
-    VectorXd ctrl_now = polyCoeff.row(seg_now);
+    ret = VectorXd::Zero(3);
 
     int order = _poly_orderList[seg_now];
     int ctrl_num1D = order + 1;
     for(int i = 0; i < 3; i++)
     {   
         for(int j = 0; j < ctrl_num1D; j++){
-            ret(i) += _CList[order](j) * ctrl_now(i * ctrl_num1D + j) * pow(t_now, j) * pow((1 - t_now), (order - j) ); 
+            ret(i) += _CList[order](j) * polyCoeff(seg_now, i * ctrl_num1D + j) * pow(t_now, j) * pow((1 - t_now), (order - j) ); 
         }
     }
-
-    return ret;  
 }
 
 bool checkSafeTrajectory(double check_time)
@@ -670,7 +676,6 @@ bool checkSafeTrajectory(double check_time)
     if(!_is_traj_exist) return false;
 
     traj_stop_pts_pcd.points.clear();
-    Vector3d traj_pt;
 
     double t_s = max(0.0, (_odom.header.stamp - _start_time).toSec());      
     int idx;
@@ -684,11 +689,13 @@ bool checkSafeTrajectory(double check_time)
     double t_accu = 0.0;
     for(int i = idx; i < _segment_num; i++ ){
       t_ss = (i == idx) ? t_s : 0.0;
-      for (double t = t_ss; t < _Time(i); t += 0.01){
-        t_accu += 0.01;
+      for (double t = t_ss; t < _Time(i); t += 0.02){
+        t_accu += 0.02;
         if(t_accu > _stop_time) break;
 
-        traj_pt = _Time(i) * getPosFromBezier(_PolyCoeff, t/_Time(i), i);
+        Vector3d traj_pt;
+        getPosFromBezier(_PolyCoeff, t/_Time(i), i, traj_pt);
+        traj_pt *= _Time(i); 
         
         PointXYZ pt;
         pt.x = traj_pt(0);
@@ -791,18 +798,19 @@ void visCommitTraj(MatrixXd polyCoeff)
 
     double duration = 0.0;
     double t_ss;
-    Vector3d state;
     for(int i = idx; i < _segment_num; i++ )
     {
         t_ss = (i == idx) ? t_s : 0.0;
-        for(double t = t_ss; t < _Time(i); t += 0.001){
+        for(double t = t_ss; t < _Time(i); t += 0.02){
             double t_d = duration + t - t_ss;
             if( t_d > _time_commit ) break;
-            state = getPosFromBezier( polyCoeff, t/_Time(i), i );
+            Vector3d traj_pt;
+            getPosFromBezier( polyCoeff, t/_Time(i), i, traj_pt );
+            
             PointXYZ pt_point;
-            pt_point.x = _Time(i) * state(0); 
-            pt_point.y = _Time(i) * state(1);
-            pt_point.z = _Time(i) * state(2);
+            pt_point.x = _Time(i) * traj_pt(0); 
+            pt_point.y = _Time(i) * traj_pt(1);
+            pt_point.z = _Time(i) * traj_pt(2);
             
             traj_commit_pts_pcd.points.push_back(pt_point);
       }
@@ -819,7 +827,8 @@ void visCommitTraj(MatrixXd polyCoeff)
 }
 
 void visBezierTrajectory(MatrixXd polyCoeff)
-{
+{   
+    ROS_INFO("[Demo] Visualize the generated trajectory.");
     double traj_len = 0.0;
     int count = 0;
     Vector3d cur, pre;
@@ -831,14 +840,15 @@ void visBezierTrajectory(MatrixXd polyCoeff)
     traj_pts_pcd.points.clear();
     for(int i = 0; i < _segment_num; i++ )
     {
-        for (double t = 0.0; t < 1.0; t += 0.005 / _Time(i), count += 1)
-        {
-            Vector3d state = getPosFromBezier( polyCoeff, t, i );
+        for (double t = 0.0; t < 1.0; t += 0.02 / _Time(i), count += 1)
+        {   
+            Vector3d traj_pt;
+            getPosFromBezier( polyCoeff, t, i, traj_pt );
             PointXYZ point;
 
-            point.x = _Time(i) * state(0);
-            point.y = _Time(i) * state(1);
-            point.z = _Time(i) * state(2);
+            cur(0) = point.x = _Time(i) * traj_pt(0);
+            cur(1) = point.y = _Time(i) * traj_pt(1);
+            cur(2) = point.z = _Time(i) * traj_pt(2);
 
             if (count) traj_len += (pre - cur).norm();
             pre = cur;

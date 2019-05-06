@@ -58,7 +58,7 @@ target_link_libraries( traj_server
     ${PCL_LIBRARIES})
 
 add_executable (random_map 
-    src/random_map.cpp)
+    src/random_map_generator.cpp)
 
 target_link_libraries (random_map
     ${catkin_LIBRARIES}

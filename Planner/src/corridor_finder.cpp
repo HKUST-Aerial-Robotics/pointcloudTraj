@@ -576,7 +576,7 @@ void safeRegionRrtStar::tracePath()
 
     if( int(feasibleEndList.size()) == 0 )
     {
-        ROS_WARN("[trace path] can't find a feasible path. ");
+        //ROS_WARN("[trace path] can't find a feasible path. ");
         path_exist_status = false;
         best_distance = inf;
         inform_status = false;

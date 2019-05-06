@@ -34,7 +34,8 @@ MatrixXd TrajectoryOptimizerSOCP::BezierConicOptimizer(
             const double max_acc,
             const int minimize_order,
             const bool is_limit_vel,
-            const bool is_limit_acc )  // define the order to which we minimize.   1 -- velocity, 2 -- acceleration, 3 -- jerk, 4 -- snap  
+            const bool is_limit_acc,
+            const bool is_print_soving )  // define the order to which we minimize.   1 -- velocity, 2 -- acceleration, 3 -- jerk, 4 -- snap  
 {   
     MatrixXd PolyCoeff;
 
@@ -114,11 +115,12 @@ MatrixXd TrajectoryOptimizerSOCP::BezierConicOptimizer(
     double x_var[var_num];
     MSKrescodee  r; 
     double primalobj;
+
     /* ## define a container for constaints boundary and boundkey ## */ 
     /* ## dataType in the double pair is : boundary type, lower bound, upper bound ## */
     vector< pair<MSKboundkeye, pair<double, double> > > con_bdk; 
-    //ROS_WARN("[Bezier Trajectory] Start stacking the bounding value for constraints");
-    /*** Here is most important stuff, we will elliminate all quadratical constraints and this would introduce many equality constraints and more additional variables***/
+
+    /*** Here is the most important stuff, we will elliminate all quadratical constraints by introducing many equality constraints and more additional variables ***/
     /*************************************************************************************************/
     /** Now firstly we omit the reformulation of the quadratic part in the objective **/
     for(int i = 0; i < equ_con_num; i ++ ){ 
@@ -135,7 +137,6 @@ MatrixXd TrajectoryOptimizerSOCP::BezierConicOptimizer(
         con_bdk.push_back(cb_eq);
     }
 
-    //ROS_WARN(" ... bounding value for corridor induced value");
     /***  Stack the bounding value for equality constraints induced by the corridor constraints  ***/
     for(int k = 0; k < segment_num; k++ )
     {
@@ -149,7 +150,6 @@ MatrixXd TrajectoryOptimizerSOCP::BezierConicOptimizer(
         }
     }
 
-    //ROS_WARN(" ... bounding value for mapping x to y induced value");
     /***  Stack the bounding value for mapping Fx to additional variables y  ***/
     for(int i = 0; i < var_y_num; i++)
     {
@@ -181,7 +181,6 @@ if(is_limit_acc)
 
     /*** ## Stacking bounds for all unknowns ## ***/ 
     /*** The sequence is control points + additional variables: x, w, y, t ***/
-    //ROS_WARN("[Bezier Trajectory] Start stacking the bounding value for variables");
     vector< pair<MSKboundkeye, pair<double, double> > > var_bdk; 
     for(int i = 0; i < total_ctrl_num; i ++ ){
         pair<MSKboundkeye, pair<double, double> > vb_x  = make_pair( MSK_BK_FR, make_pair( - MSK_INFINITY, + MSK_INFINITY ) ); 
@@ -222,24 +221,19 @@ if(is_limit_acc)
     r = MSK_makeenv( &env, NULL );   // Create the mosek environment. 
     r = MSK_maketask(env,con_num, var_num, &task); // Create the optimization task. 
 
-// Parameters used in the optimizer
-//######################################################################
+    // Parameters used in the optimizer
     MSK_putintparam (task, MSK_IPAR_OPTIMIZER , MSK_OPTIMIZER_CONIC );
     MSK_putintparam (task, MSK_IPAR_NUM_THREADS, 1);
-
     MSK_putdouparam (task, MSK_DPAR_CHECK_CONVEXITY_REL_TOL, 1e-5);
-
     MSK_putdouparam (task, MSK_DPAR_INTPNT_CO_TOL_DFEAS,   1e-4);
     MSK_putdouparam (task, MSK_DPAR_INTPNT_CO_TOL_PFEAS,   1e-4);
     MSK_putdouparam (task, MSK_DPAR_INTPNT_CO_TOL_INFEAS,  1e-4);
     MSK_putdouparam (task, MSK_DPAR_INTPNT_CO_TOL_REL_GAP, 1e-5);
-
     //MSK_putdouparam (task, MSK_DPAR_INTPNT_CO_TOL_MU_RED, 1e-10);
-
-//######################################################################
     
-    //ROS_WARN("Append all bound values and keys");
-    r = MSK_linkfunctotaskstream(task,MSK_STREAM_LOG,NULL,printstr); 
+    if( is_print_soving )
+        r = MSK_linkfunctotaskstream(task,MSK_STREAM_LOG, NULL, printstr); 
+
     // Append 'con_num' empty constraints. 
     //The constraints will initially have no bounds. 
     if ( r == MSK_RES_OK ) 

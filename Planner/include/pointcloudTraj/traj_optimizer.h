@@ -31,7 +31,8 @@ public:
             const double max_acc,
             const int minimize_order,
             const bool is_limit_vel,
-            const bool is_limit_acc);  // define the order to which we minimize.   1 -- velocity, 2 -- acceleration, 3 -- jerk, 4 -- snap  
+            const bool is_limit_acc,
+            const bool is_print_soving);  // define the order to which we minimize.   1 -- velocity, 2 -- acceleration, 3 -- jerk, 4 -- snap  
 
         double getObjective(){ 
             return _objective;
