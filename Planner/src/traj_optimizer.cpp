@@ -64,7 +64,7 @@ MatrixXd TrajectoryOptimizerSOCP::BezierConicOptimizer(
     int total_ctrl_num = 0;
     int obj_nzero_num  = 0;
 
-    for(int i = 0; i < segment_num; i++){   
+    for(int i = 0; i < segment_num; i++) {   
         int traj_order  = poly_orders[i];
         s1_d1_ctrl_num  = traj_order + 1;
         inequ_con_num   += s1_d1_ctrl_num;
@@ -123,7 +123,7 @@ MatrixXd TrajectoryOptimizerSOCP::BezierConicOptimizer(
     /*** Here is the most important stuff, we will elliminate all quadratical constraints by introducing many equality constraints and more additional variables ***/
     /*************************************************************************************************/
     /** Now firstly we omit the reformulation of the quadratic part in the objective **/
-    for(int i = 0; i < equ_con_num; i ++ ){ 
+    for(int i = 0; i < equ_con_num; i ++ ) { 
         double beq_i;
         if(i < 3)                    beq_i = start_pos(i); 
         else if (i >= 3  && i < 6  ) beq_i = start_vel(i - 3); 
@@ -138,11 +138,9 @@ MatrixXd TrajectoryOptimizerSOCP::BezierConicOptimizer(
     }
 
     /***  Stack the bounding value for equality constraints induced by the corridor constraints  ***/
-    for(int k = 0; k < segment_num; k++ )
-    {
+    for(int k = 0; k < segment_num; k++ ) {
         s1_d1_ctrl_num = poly_orders[k] + 1;
-        for(int i = 0; i < s1_d1_ctrl_num; i++)
-        {
+        for(int i = 0; i < s1_d1_ctrl_num; i++) {
             double bin_i = corridor_radius(k) * corridor_radius(k) 
             - corridor_centers(k, 0) * corridor_centers(k, 0) - corridor_centers(k, 1) * corridor_centers(k, 1) - corridor_centers(k, 2) * corridor_centers(k, 2) ;            
             pair<MSKboundkeye, pair<double, double> > cb_ie = make_pair( MSK_BK_FX, make_pair( bin_i, bin_i ) ); 
@@ -157,23 +155,21 @@ MatrixXd TrajectoryOptimizerSOCP::BezierConicOptimizer(
         con_bdk.push_back(cb_ie);   
     }
 
-if(is_limit_vel)
+if( is_limit_vel )
 {
     /***  Stack the bounding value for the linear inequality for the velocity constraints  ***/
     // for velocity constraints
-    for(int i = 0; i < vel_con_num; i++)
-    {
+    for(int i = 0; i < vel_con_num; i++) {
         pair<MSKboundkeye, pair<double, double> > cb_ie = make_pair( MSK_BK_FX, make_pair( 0.0, 0.0) );
         con_bdk.push_back(cb_ie);   
     }
 }
 
-if(is_limit_acc)
+if( is_limit_acc )
 {
     /***  Stack the bounding value for the linear inequality for the velocity constraints  ***/
     // for velocity constraints
-    for(int i = 0; i < acc_con_num; i++)
-    {
+    for(int i = 0; i < acc_con_num; i++) {
         pair<MSKboundkeye, pair<double, double> > cb_ie = make_pair( MSK_BK_FX, make_pair( 0.0, 0.0) );
         con_bdk.push_back(cb_ie);   
     }
@@ -182,34 +178,34 @@ if(is_limit_acc)
     /*** ## Stacking bounds for all unknowns ## ***/ 
     /*** The sequence is control points + additional variables: x, w, y, t ***/
     vector< pair<MSKboundkeye, pair<double, double> > > var_bdk; 
-    for(int i = 0; i < total_ctrl_num; i ++ ){
+    for(int i = 0; i < total_ctrl_num; i ++ ) {
         pair<MSKboundkeye, pair<double, double> > vb_x  = make_pair( MSK_BK_FR, make_pair( - MSK_INFINITY, + MSK_INFINITY ) ); 
         var_bdk.push_back(vb_x);
     } 
 
     /* ## Variable bounds for addtional variables y and w ## */ 
-    for(int i = 0; i < (var_y_num + var_w_num); i ++ ){
+    for(int i = 0; i < (var_y_num + var_w_num); i ++ ) {
         pair<MSKboundkeye, pair<double, double> > vb_x  = make_pair( MSK_BK_FR, make_pair( - MSK_INFINITY, + MSK_INFINITY ) );
         var_bdk.push_back(vb_x);
     }
 
     /* ## Variable bounds for addtional variables t, all pre-set as 1 ## */ 
-    for(int i = 0; i < var_t_num; i ++ ){
+    for(int i = 0; i < var_t_num; i ++ ) {
         pair<MSKboundkeye, pair<double, double> > vb_x  = make_pair( MSK_BK_FX, make_pair( 1.0, 1.0 ) ); 
         var_bdk.push_back(vb_x);
     }
 
-if(is_limit_vel)
+if ( is_limit_vel )
 {
-    for(int i = 0; i < vel_var_num; i ++ ){
+    for(int i = 0; i < vel_var_num; i ++ ) {
         pair<MSKboundkeye, pair<double, double> > vb_x  = make_pair( MSK_BK_RA, make_pair( - max_vel, + max_vel ) ); 
         var_bdk.push_back(vb_x);
     } 
 }
 
-if(is_limit_acc)
+if ( is_limit_acc )
 {   
-    for(int i = 0; i < acc_var_num; i ++ ){
+    for(int i = 0; i < acc_var_num; i ++ ) {
         pair<MSKboundkeye, pair<double, double> > vb_x  = make_pair( MSK_BK_RA, make_pair( - max_acc, + max_acc ) ); 
         var_bdk.push_back(vb_x);
     } 
@@ -231,20 +227,21 @@ if(is_limit_acc)
     MSK_putdouparam (task, MSK_DPAR_INTPNT_CO_TOL_REL_GAP, 1e-5);
     //MSK_putdouparam (task, MSK_DPAR_INTPNT_CO_TOL_MU_RED, 1e-10);
     
-    if( is_print_soving )
+    // Turn on the printing of the Conic solver
+    if ( is_print_soving )
         r = MSK_linkfunctotaskstream(task,MSK_STREAM_LOG, NULL, printstr); 
 
     // Append 'con_num' empty constraints. 
     //The constraints will initially have no bounds. 
     if ( r == MSK_RES_OK ) 
-      r = MSK_appendcons(task, con_num);  
+        r = MSK_appendcons(task, con_num);  
 
     // Append 'var_num' variables. The variables will initially be fixed at zero (x=0). 
     if ( r == MSK_RES_OK ) 
-      r = MSK_appendvars(task, var_num); 
+        r = MSK_appendvars(task, var_num); 
 
-    for(j = 0; j<var_num && r == MSK_RES_OK; ++j){ 
-      // Set the bounds on variable j : //  blx[j] <= x_j <= bux[j] 
+    for(j = 0; j<var_num && r == MSK_RES_OK; ++j) { 
+        // Set the bounds of variable j : //  blx[j] <= x_j <= bux[j] 
         if (r == MSK_RES_OK) 
             r = MSK_putvarbound(task, 
                                 j,                            // Index of variable. 
@@ -270,12 +267,12 @@ if(is_limit_acc)
     // For position, velocity and acceleration, seperately
     
     int row_idx = 0;
-    /*   Start position  */
+    /*   Initial state  */
     {
-        // position :
         int order = poly_orders[0];
         s1_d1_ctrl_num = order + 1;
-        for(int i = 0; i < 3; i++){  // loop for x, y, z       
+        // position :
+        for(int i = 0; i < 3; i++) {  // loop for x, y, z       
             int nzi = 1;
             MSKint32t asub[nzi];
             double aval[nzi];
@@ -285,7 +282,7 @@ if(is_limit_acc)
             row_idx ++;
         }
         // velocity :
-        for(int i = 0; i < 3; i++){  // loop for x, y, z       
+        for(int i = 0; i < 3; i++) {  // loop for x, y, z       
             int nzi = 2;
             MSKint32t asub[nzi];
             double aval[nzi];
@@ -297,7 +294,7 @@ if(is_limit_acc)
             row_idx ++;
         }
         // acceleration : 
-        for(int i = 0; i < 3; i++){  // loop for x, y, z       
+        for(int i = 0; i < 3; i++) {  // loop for x, y, z       
             int nzi = 3;
             MSKint32t asub[nzi];
             double aval[nzi];
@@ -317,12 +314,12 @@ if(is_limit_acc)
     // #2.2 velocity constraints in the end point
     // #2.3 acceleration constraints in the end point
 
-    /*   End position  */
+    /*   Final state  */
     {   
         int order = poly_orders[segment_num - 1];
         s1_d1_ctrl_num = order + 1;
         // position :
-        for(int i = 0; i < 3; i++){  // loop for x, y, z       
+        for(int i = 0; i < 3; i++) {  // loop for x, y, z       
             int nzi = 1;
             MSKint32t asub[nzi];
             double aval[nzi];
@@ -332,7 +329,7 @@ if(is_limit_acc)
             row_idx ++;
         }
         // velocity :
-        for(int i = 0; i < 3; i++){  // loop for x, y, z       
+        for(int i = 0; i < 3; i++) {  // loop for x, y, z       
             int nzi = 2;
             MSKint32t asub[nzi];
             double aval[nzi];
@@ -344,7 +341,7 @@ if(is_limit_acc)
             row_idx ++;
         }
         // acceleration : 
-        for(int i = 0; i < 3; i++){  // loop for x, y, z       
+        for(int i = 0; i < 3; i++) {  // loop for x, y, z       
             int nzi = 3;
             MSKint32t asub[nzi];
             double aval[nzi];
@@ -359,17 +356,16 @@ if(is_limit_acc)
         }
     }
 
-    // #3   put the equality coinstraints in each joint positions 
-    // #3.1 positon constraints in each joint positions
-    // #3.2 velocity constraints in each joint positions
-    // #3.3 acceleration constraints in each joint positions
+    // #3   put the equality coinstraints in each joint between two pices of the curve 
+    // #3.1 positon constraints in each joint 
+    // #3.2 velocity constraints in each joint 
+    // #3.3 acceleration constraints in each joint 
 
-    /*   joint points  */
+    /*   continuity constraints  */
     {
         int sub_shift = 0;
         double val0, val1;
-        for(int k = 0; k < (segment_num - 1); k ++ )
-        {
+        for(int k = 0; k < (segment_num - 1); k ++ ) {
             int order = poly_orders[k];
             s1_d1_ctrl_num = order + 1;
             s1_ctrl_num = 3 * s1_d1_ctrl_num;
@@ -379,8 +375,7 @@ if(is_limit_acc)
             // position :
             val0 = corridor_times(k);
             val1 = corridor_times(k+1);
-            for(int i = 0; i < 3; i++)
-            {  // loop for x, y, z
+            for(int i = 0; i < 3; i++) {  // loop for x, y, z
                 int nzi = 2;
                 MSKint32t asub[nzi];
                 double aval[nzi];
@@ -398,8 +393,7 @@ if(is_limit_acc)
             // velocity :
             val0 = order;
             val1 = order_next;
-            for(int i = 0; i < 3; i++)
-            {  // loop for x, y, z
+            for(int i = 0; i < 3; i++) {  // loop for x, y, z
                 int nzi = 4;
                 MSKint32t asub[nzi];
                 double aval[nzi];
@@ -421,8 +415,7 @@ if(is_limit_acc)
             // acceleration :
             val0 = order * (order - 1) / corridor_times(k);
             val1 = order_next * (order_next - 1) / corridor_times(k+1);
-            for(int i = 0; i < 3; i++)
-            {  // loop for x, y, z
+            for(int i = 0; i < 3; i++) {  // loop for x, y, z
                 int nzi = 6;
                 MSKint32t asub[nzi];
                 double aval[nzi];
@@ -450,25 +443,22 @@ if(is_limit_acc)
         }
     }
 
-    {
+    {   
         /*** Variables sequence: x, w, y, t ***/
         // #0  for all the c'x + w = u induced by corridor constraints
         int sub_idx   = 0;
         int sub_shift = 0;
-        for(int k = 0; k < segment_num ; k ++ )
-        {   
+        for(int k = 0; k < segment_num ; k ++ ) {   
             int order = poly_orders[k];
             s1_d1_ctrl_num = order + 1;
             s1_ctrl_num = 3 * s1_d1_ctrl_num;
 
-            for(int p = 0; p < s1_d1_ctrl_num; p++)
-            {
+            for(int p = 0; p < s1_d1_ctrl_num; p++) {
                 int nzi = 4;
                 MSKint32t asub[nzi];
                 double aval[nzi];
                 
-                for(int i = 0; i < 3; i++)
-                {   
+                for(int i = 0; i < 3; i++) {   
                     // for x, y, z, no loop but in a row : x, y, z coupled
                     aval[i] = -2.0 * corridor_centers( k, i ) * corridor_times(k);
                     asub[i] = sub_shift + i * s1_d1_ctrl_num + p;    
@@ -481,19 +471,18 @@ if(is_limit_acc)
                 row_idx ++;
                 sub_idx ++;
             }
+
             sub_shift += s1_ctrl_num;
         }
 
         // #1  for all the Fx = y mapping relationships induced by the corridor constraints
         sub_idx   = 0;
         sub_shift = 0;
-        for(int k = 0; k < segment_num ; k ++ )
-        {   
+        for(int k = 0; k < segment_num ; k ++ ) {   
             int order = poly_orders[k];
             s1_d1_ctrl_num = order + 1;
             s1_ctrl_num = 3 * s1_d1_ctrl_num;
-            for(int p = 0; p < s1_ctrl_num; p++)
-            {
+            for(int p = 0; p < s1_ctrl_num; p++) {
                 int nzi = 2;
                 MSKint32t asub[nzi];
                 double aval[nzi];
@@ -508,6 +497,7 @@ if(is_limit_acc)
                 row_idx ++;
                 sub_idx ++;
             }
+
             sub_shift += s1_ctrl_num;
         }
 
@@ -515,16 +505,13 @@ if(is_limit_acc)
         //ROS_WARN("for variable mapping by objective");
         sub_idx   = 0;
         sub_shift = 0;
-        for(int k = 0; k < segment_num; k ++)
-        {   
+        for(int k = 0; k < segment_num; k ++) {   
             int order = poly_orders[k];
             s1_d1_ctrl_num = order + 1;
             s1_ctrl_num = 3 * s1_d1_ctrl_num;
             
-            for(int p = 0; p < 3; p ++ )
-            {
-                for( int i = 0; i < s1_d1_ctrl_num - minimize_order; i ++ )
-                {   
+            for(int p = 0; p < 3; p ++ ) {
+                for( int i = 0; i < s1_d1_ctrl_num - minimize_order; i ++ ) {   
                     int nzi = 1;
                     for(int j = 0; j < s1_d1_ctrl_num - i; j++)
                         if(fabs(FMs[order](i, j)) > 0.0001 )
@@ -535,15 +522,12 @@ if(is_limit_acc)
                     double aval[nzi];
 
                     int id_j = 0;
-                    for(int j = 0; j < s1_d1_ctrl_num - i; j ++)
-                    {   
-                        if(fabs(FMs[order](i, j)) > 0.0001)
-                        {
+                    for(int j = 0; j < s1_d1_ctrl_num - i; j ++) {   
+                        if(fabs(FMs[order](i, j)) > 0.0001) {
                             aval[id_j] = sqrt(2.0) * FMs[order](i, j) / pow(corridor_times(k), (2 * minimize_order - 3) / 2.0); 
                             asub[id_j] = sub_shift + p * s1_d1_ctrl_num + j;    
                             id_j ++;
                         }
-                        //cout<<aval[j]<<endl;
                     }
                     
                     aval[nzi-1] = -1.0;
@@ -554,26 +538,24 @@ if(is_limit_acc)
                     sub_idx ++;
                 }
             }  
+
             sub_shift += s1_ctrl_num;
         }
     }
 
-    // Enforcing high-order constraints
+    /*   Enforcing high-order constraints   */
 if(is_limit_vel)
 {
     // The velocity constraints
     int sub_shift   = 0;
     int sub_v_shift = 0;
-    for(int k = 0; k < segment_num ; k ++ )
-    {   
+    for(int k = 0; k < segment_num ; k ++ ) {   
         int order = poly_orders[k];
         s1_d1_ctrl_num = order + 1;
         s1_ctrl_num   = 3 * s1_d1_ctrl_num;
 
-        for(int i = 0; i < 3; i++)
-        {  // for x, y, z loop
-            for(int p = 0; p < order; p++)
-            {
+        for(int i = 0; i < 3; i++) {  // for x, y, z loop
+            for(int p = 0; p < order; p++) {
                 int nzi = 3;
                 MSKint32t asub[nzi];
                 double aval[nzi];
@@ -602,16 +584,13 @@ if(is_limit_acc)
     // The acceleration constraints
     int sub_shift   = 0;
     int sub_a_shift = 0;
-    for(int k = 0; k < segment_num ; k ++ )
-    {   
+    for(int k = 0; k < segment_num ; k ++ ) {   
         int order = poly_orders[k];
         s1_d1_ctrl_num = order + 1;
         s1_ctrl_num   = 3 * s1_d1_ctrl_num;
 
-        for(int i = 0; i < 3; i++)
-        {  // for x, y, z loop
-            for(int p = 0; p < order - 1; p++)
-            {
+        for(int i = 0; i < 3; i++) {  // for x, y, z loop
+            for(int p = 0; p < order - 1; p++) {
                 int nzi = 4;
                 MSKint32t asub[nzi];
                 double aval[nzi];
@@ -640,19 +619,17 @@ if(is_limit_acc)
     /*** Variables sequence: x, w, y, t ***/
     /*  w num = 1 + inequ_con_num; 
         y num = (s1_d1_ctrl_num - 3) * 3 * segment_num + inequ_con_num * 3;
-        t num = 1 + inequ_con_num; */
+        t num = 1 + inequ_con_num;  */
     // Stack all conic cones;
     {   
         /** cones induced by quadratical constraints **/
         int sub_idx   = 0;
         int sub_shift = 0;
-        for(int k = 0; k < segment_num ; k ++ )
-        {   
+        for(int k = 0; k < segment_num ; k ++ ) {   
             int order = poly_orders[k];
             s1_d1_ctrl_num = order + 1;
             s1_ctrl_num = 3 * s1_d1_ctrl_num;
-            for(int p = 0; p < s1_d1_ctrl_num; p++)
-            {
+            for(int p = 0; p < s1_d1_ctrl_num; p++) {
                 int nzi = 5;
                 MSKint32t csub[nzi];                
                 
@@ -666,6 +643,7 @@ if(is_limit_acc)
                 r = MSK_appendcone(task, MSK_CT_RQUAD, 0.0, nzi, csub);
                 sub_idx ++;
             }
+
             sub_shift += s1_ctrl_num;
         }
         /** the cone induced by the quadratical objective **/
@@ -684,7 +662,7 @@ if(is_limit_acc)
 
     // Stack the objective function;
     /*** Now no quadratical objective exists, replaced it by a linear variable w ***/    
-    /* Set the linear term c_j in the objective.*/  
+    /*  Set the linear term c_j in the objective.  */  
     MSKint32t csub = total_ctrl_num + var_w_num - 1; 
     r = MSK_putcj(task, csub, 0.5);
 
@@ -697,56 +675,43 @@ if(is_limit_acc)
         r = MSK_optimizetrm(task,&trmcode); 
         MSK_solutionsummary (task,MSK_STREAM_LOG); 
           
-        if ( r == MSK_RES_OK ) 
-        { 
-          MSKsolstae solsta; 
-          MSK_getsolsta (task,MSK_SOL_ITR,&solsta); 
-           
-          switch(solsta) 
-          { 
-            case MSK_SOL_STA_OPTIMAL:    
-            case MSK_SOL_STA_NEAR_OPTIMAL: 
-              
-            
-            r = MSK_getxx(task, 
-                          MSK_SOL_ITR,    // Request the interior solution.  
-                          x_var); 
+        if ( r == MSK_RES_OK ) { 
+            MSKsolstae solsta; 
+            MSK_getsolsta (task,MSK_SOL_ITR,&solsta); 
 
-            r = MSK_getprimalobj(
-                task,
-                MSK_SOL_ITR,
-                &primalobj);
+            switch(solsta) { 
+                case MSK_SOL_STA_OPTIMAL:    
+                case MSK_SOL_STA_NEAR_OPTIMAL: 
+                  
+                r = MSK_getxx(task, MSK_SOL_ITR, x_var);  // Request the interior solution.  
+                r = MSK_getprimalobj( 
+                    task, MSK_SOL_ITR, &primalobj);
 
-            _objective = primalobj;
+                _objective = primalobj;
+                solve_ok = true;
+                break; 
 
-            solve_ok = true;
-            
-            break; 
-            
-            case MSK_SOL_STA_DUAL_INFEAS_CER: 
-            case MSK_SOL_STA_PRIM_INFEAS_CER: 
-            case MSK_SOL_STA_NEAR_DUAL_INFEAS_CER: 
-            case MSK_SOL_STA_NEAR_PRIM_INFEAS_CER:   
-              printf("Primal or dual infeasibility certificate found.\n"); 
-              break; 
-               
-            case MSK_SOL_STA_UNKNOWN: 
-              printf("The status of the solution could not be determined.\n"); 
-              //solve_ok = true; // debug
-              break; 
-            default: 
-              printf("Other solution status."); 
-              break; 
-          } 
+                case MSK_SOL_STA_DUAL_INFEAS_CER: 
+                case MSK_SOL_STA_PRIM_INFEAS_CER: 
+                case MSK_SOL_STA_NEAR_DUAL_INFEAS_CER: 
+                case MSK_SOL_STA_NEAR_PRIM_INFEAS_CER:   
+                    printf("Primal or dual infeasibility certificate found.\n"); 
+                    break; 
+                   
+                case MSK_SOL_STA_UNKNOWN: 
+                    printf("The status of the solution could not be determined.\n"); 
+                    break; 
+
+                default: 
+                    printf("Other solution status."); 
+                    break; 
+            } 
         } 
         else 
-        { 
-          printf("Error while optimizing.\n"); 
-        } 
+            printf("Error while optimizing.\n"); 
     }
      
-    if (r != MSK_RES_OK) 
-    { 
+    if (r != MSK_RES_OK) { 
         // In case of an error print error code and description. 
         char symname[MSK_MAX_STR_LEN]; 
         char desc[MSK_MAX_STR_LEN]; 
@@ -762,21 +727,20 @@ if(is_limit_acc)
     MSK_deleteenv(&env); 
 
     if(!solve_ok){
-      MatrixXd poly_fail = MatrixXd::Identity(3,3);
-      ROS_WARN("In solver, falied ");
-      return poly_fail;
+        MatrixXd poly_fail = MatrixXd::Identity(3,3);
+        ROS_WARN("In solver, falied ");
+        return poly_fail;
     }
 
     VectorXd d_var(var_num);
     for(int i = 0; i < var_num; i++)
-      d_var(i) = x_var[i];
+        d_var(i) = x_var[i];
 
     int max_order = *max_element( begin( poly_orders ), end( poly_orders ) );    
     PolyCoeff = MatrixXd::Zero(segment_num, 3 *(max_order + 1) );
 
     int var_shift = 0;
-    for(int i = 0; i < segment_num; i++ )
-    {
+    for(int i = 0; i < segment_num; i++ ){
         int order = poly_orders[i];
         int poly_num1d = order + 1;
         

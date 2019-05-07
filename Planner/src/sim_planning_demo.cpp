@@ -395,18 +395,26 @@ int main (int argc, char** argv)
     ros::init (argc, argv, "point_cloud_planer_node");
     ros::NodeHandle node_handle( "~" );
 
-    node_handle.param("planParam/plan_rate",        _planning_rate,   10.0);      
-    node_handle.param("planParam/safety_margin",    _safety_margin,   0.65);
-    node_handle.param("planParam/search_margin",    _search_margin,   0.35);
-    node_handle.param("planParam/max_radius",       _max_radius,      10.0);
-    node_handle.param("planParam/sensing_range",    _sensing_range,   10.0);     
-    node_handle.param("planParam/refine_portion",   _refine_portion,  0.80);     
-    node_handle.param("planParam/sample_portion",   _sample_portion,  0.25);     // the ratio to generate samples inside the map range
-    node_handle.param("planParam/goal_portion",     _goal_portion,    0.05);     // the ratio to generate samples on the goal
-    node_handle.param("planParam/path_find_limit",  _path_find_limit, 0.05);     
-    node_handle.param("planParam/max_samples",      _max_samples,     3000);     
-    node_handle.param("planParam/stop_horizon",     _stop_time,       0.50);     
-    node_handle.param("planParam/commitTime",       _time_commit,      1.0);
+    node_handle.param("planParam/plan_rate",       _planning_rate,   10.0);      
+    node_handle.param("planParam/safety_margin",   _safety_margin,   0.65);
+    node_handle.param("planParam/search_margin",   _search_margin,   0.35);
+    node_handle.param("planParam/max_radius",      _max_radius,      10.0);
+    node_handle.param("planParam/sensing_range",   _sensing_range,   10.0);     
+    node_handle.param("planParam/refine_portion",  _refine_portion,  0.80);     
+    node_handle.param("planParam/sample_portion",  _sample_portion,  0.25);     // the ratio to generate samples inside the map range
+    node_handle.param("planParam/goal_portion",    _goal_portion,    0.05);     // the ratio to generate samples on the goal
+    node_handle.param("planParam/path_find_limit", _path_find_limit, 0.05);     
+    node_handle.param("planParam/max_samples",     _max_samples,     3000);     
+    node_handle.param("planParam/stop_horizon",    _stop_time,       0.50);     
+    node_handle.param("planParam/commitTime",      _time_commit,      1.0);
+
+    node_handle.param("demoParam/target_x",        _end_pos(0),       0.0);
+    node_handle.param("demoParam/target_y",        _end_pos(1),       0.0);
+    node_handle.param("demoParam/target_z",        _end_pos(2),       0.0);
+    node_handle.param("demoParam/goal_input",      _use_preset_goal, true);
+    node_handle.param("demoParam/is_limit_vel",    _is_limit_vel,    true);
+    node_handle.param("demoParam/is_limit_acc",    _is_limit_acc,    true);
+    node_handle.param("demoParam/is_print",        _is_print,        true);
 
     node_handle.param("dynamic/vec",       _vel_mean, 2.0);
     node_handle.param("dynamic/acc",       _acc_mean, 1.0);
@@ -424,14 +432,6 @@ int main (int argc, char** argv)
     node_handle.param("optimization/poly_order_max", _poly_order_max, 10);
     node_handle.param("optimization/minimize_order", _minimize_order,  3);
     
-    node_handle.param("demoParam/target_x",     _end_pos(0),       0.0);
-    node_handle.param("demoParam/target_y",     _end_pos(1),       0.0);
-    node_handle.param("demoParam/target_z",     _end_pos(2),       0.0);
-    node_handle.param("demoParam/goal_input",   _use_preset_goal, true);
-    node_handle.param("demoParam/is_limit_vel", _is_limit_vel,    true);
-    node_handle.param("demoParam/is_limit_acc", _is_limit_acc,    true);
-    node_handle.param("demoParam/is_print",     _is_print,        true);
-
     Bernstein _bernstein;
     if(_bernstein.setParam(_poly_order_min, _poly_order_max, _minimize_order) == -1){
         ROS_ERROR(" The trajectory order is set beyond the library's scope, please re-set ");

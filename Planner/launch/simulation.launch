@@ -7,17 +7,42 @@
 <arg name="end_y" default=" 30.0"/>
 <arg name="end_z" default=" 2.0"/>
 
-<node pkg="waypoint_generator" name="waypoint_generator" type="waypoint_generator" output="screen">
+<node pkg = "waypoint_generator" name = "waypoint_generator" type = "waypoint_generator" output = "screen">
         <remap from="~odom" to="/odom/fake_odom"/>        
         <remap from="~goal" to="/goal"/>
         <param name="waypoint_type" value="manual"/>    
 </node>
  
-<node name   ="sim_planning_demo" pkg ="pointcloudTraj" type   ="sim_planning_demo" output = "screen" required="true">        
+<node name = "sim_planning_demo" pkg = "pointcloudTraj" type = "sim_planning_demo" output = "screen" required = "true">        
         <remap from="~waypoints"       to="/waypoint_generator/waypoints"/>
         <remap from="~odometry"        to="/odom/fake_odom"/>
         <remap from="~PointCloud"      to="/map_server/local_map" />
         <remap from="~position_cmd"    to="/position_cmd"  />
+
+        <param name="planParam/plan_rate"        value="10.0"/>
+        <param name="planParam/safety_margin"    value="0.5" />
+        <param name="planParam/search_margin"    value="0.0" />
+        <param name="planParam/max_radius"       value="5.0" />
+        <param name="planParam/sensing_range"    value="30.0"/>
+        <param name="planParam/refine_portion"   value="0.7" />
+        <param name="planParam/sample_portion"   value="0.3" />
+        <param name="planParam/goal_portion"     value="0.05"/>
+        <param name="planParam/path_find_limit"  value="0.1" />
+        <param name="planParam/max_samples"      value="50000"/>
+        <param name="planParam/stop_horizon"     value="2.0"  />
+        <param name="planParam/commitTime"       value="5.0"  />
+        
+        <param name="demoParam/target_x"     value="$(arg end_x)" />
+        <param name="demoParam/target_y"     value="$(arg end_y)" />
+        <param name="demoParam/target_z"     value="$(arg end_z)" />
+        <param name="demoParam/goal_input"   value="false" />
+        <param name="demoParam/is_limit_vel" value="true"  />
+        <param name="demoParam/is_limit_acc" value="false" />
+
+        <param name="dynamic/vec"           value="8.0"/>
+        <param name="dynamic/acc"           value="4.0"/>
+        <param name="dynamic/max_vec"       value="4.0"/>
+        <param name="dynamic/max_acc"       value="2.5"/>
 
         <param name="mapBoundary/lower_x"   value="-50.0"/>
         <param name="mapBoundary/upper_x"   value=" 50.0"/>
@@ -26,44 +51,19 @@
         <param name="mapBoundary/lower_z"   value="  0.0"/>
         <param name="mapBoundary/upper_z"   value="  4.0"/>
 
-        <param name="planParam/plan_rate"        value=" 10.0"/>
-        <param name="planParam/safety_margin"    value="0.5" />
-        <param name="planParam/search_margin"    value="0.0" />
-        <param name="planParam/max_radius"       value="5.0" />
-        <param name="planParam/sensing_range"    value="30.0" />
-        <param name="planParam/refine_portion"   value="0.7"  />
-        <param name="planParam/sample_portion"   value="0.3" />
-        <param name="planParam/goal_portion"     value="0.05" />
-        <param name="planParam/path_find_limit"  value="0.1" />
-        <param name="planParam/max_samples"      value="50000" />
-        <param name="planParam/stop_horizon"     value="2.0"  />
-        <param name="planParam/commitTime"       value="5.0"/>
-
-        <param name="dynamic/vec"           value="8.0"/>
-        <param name="dynamic/acc"           value="4.0"/>
-        <param name="dynamic/max_vec"       value="4.0"/>
-        <param name="dynamic/max_acc"       value="2.5"/>
-
         <param name="optimization/poly_order_min" value="4"/>  <!-- min order for the smallest piece of the trajectory -->
         <param name="optimization/poly_order_max" value="8"/>  <!-- max order for the largest piece of the trajectory -->
         <param name="optimization/minimize_order" value="3"/>  <!-- 3 for minimize jerk, 2 for minimize acceleration -->
-
-        <param name="demoParam/target_x"     value="$(arg end_x)" />
-        <param name="demoParam/target_y"     value="$(arg end_y)" />
-        <param name="demoParam/target_z"     value="$(arg end_z)" />
-        <param name="demoParam/goal_input"   value="false" />
-        <param name="demoParam/is_limit_vel" value="true"  />
-        <param name="demoParam/is_limit_acc" value="false" />
 </node>
  
 <!--  <node name="rviz" pkg="rviz" type="rviz" output="screen"
        args="-d $(find pointcloudTraj)/launch/rviz_config/rviz_config.rviz"> 
 </node> -->
 
-<node name ="map_server" pkg ="pointcloudTraj" type ="map_server" output = "screen">    
+<node name = "map_server" pkg = "pointcloudTraj" type = "map_server" output = "screen">    
         <remap from="~odometry"   to="/odom/fake_odom"/>
         <remap from="~pointCloud" to="/random_map/all_map"/>
-        
+
         <param name="LocalSensing/radius" value="30.0"/>        
         <param name="LocalSensing/rate"   value="10.0"/>        
         <param name="LocalSensing/std"    value="0.15"/>        
@@ -87,7 +87,7 @@
   <param name="init_z"  value="$(arg init_z)"/>
 </node>
 
-<node pkg="odom_visualization" name="odom_visualization" type="odom_visualization" output="screen">
+<node pkg = "odom_visualization" name = "odom_visualization" type = "odom_visualization" output = "screen">
         <remap from="~cmd"  to="/position_cmd"/>
         <param name="color/a" value="0.8"/>    
         <param name="color/r" value="1.0"/>        
@@ -98,8 +98,8 @@
         <param name="frame_id"    value="map"/>      
 </node>
 
-<node name ="random_map" pkg ="pointcloudTraj" type ="random_map" output = "screen">    
-        <remap from="~odometry"     to="/odom/fake_odom"/>    
+<node name ="random_map" pkg = "pointcloudTraj" type = "random_map" output = "screen">    
+        <remap from="~odometry" to="/odom/fake_odom"/>    
 
         <param name="mapBoundary/lower_x"      value="-50.0"/>
         <param name="mapBoundary/upper_x"      value=" 50.0"/>
