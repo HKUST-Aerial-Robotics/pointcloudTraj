@@ -125,30 +125,29 @@ void pubSensedPoints()
 }
 
 
-int main (int argc, char** argv) {
-        
-      ros::init (argc, argv, "map_server");
-      ros::NodeHandle n( "~" );
+int main (int argc, char** argv) {        
+    ros::init (argc, argv, "map_server");
+    ros::NodeHandle n( "~" );
 
-      _local_map_pub = n.advertise<sensor_msgs::PointCloud2>("local_map", 1);                                                   
+    _local_map_pub = n.advertise<sensor_msgs::PointCloud2>("local_map", 1);                                                   
 
-      _odom_sub = n.subscribe( "odometry",  50, rcvOdometryCallbck );
-      _cmd_sub  = n.subscribe( "command",   50, rcvCmdCallbck );
-      _map_sub  = n.subscribe( "pointCloud", 1, rcvPointCloudCallBack);
+    _odom_sub = n.subscribe( "odometry",  50, rcvOdometryCallbck );
+    _cmd_sub  = n.subscribe( "command",   50, rcvCmdCallbck );
+    _map_sub  = n.subscribe( "pointCloud", 1, rcvPointCloudCallBack);
 
-      n.param("LocalSensing/radius", _sensing_range, 20.0);
-      n.param("LocalSensing/rate",   _sensing_rate, 10.0);
-      n.param("LocalSensing/std",    _standard_deviation, 0.1);
-      n.param("LocalSensing/use_accumulate_map", _use_accumulate_map, false);
-      
-      ros::Rate loop_rate(_sensing_rate);
-      
-      while (ros::ok())
-      {
-        pubSensedPoints();
-        ros::spinOnce();
-        loop_rate.sleep();
-      }
+    n.param("LocalSensing/radius", _sensing_range, 20.0);
+    n.param("LocalSensing/rate",   _sensing_rate, 10.0);
+    n.param("LocalSensing/std",    _standard_deviation, 0.1);
+    n.param("LocalSensing/use_accumulate_map", _use_accumulate_map, false);
+    
+    ros::Rate loop_rate(_sensing_rate);
+    
+    while (ros::ok())
+    {
+      pubSensedPoints();
+      ros::spinOnce();
+      loop_rate.sleep();
+    }
 
-      return 0;
+    return 0;
 }

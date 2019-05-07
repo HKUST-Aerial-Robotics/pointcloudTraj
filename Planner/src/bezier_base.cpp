@@ -273,7 +273,6 @@ int Bernstein::setParam(int poly_order_min, int poly_order_max, int min_order)
 	return ret;
 };
 
-
 vector<MatrixXd> Bernstein::getMQM(){ return MQMList; }
 
 vector<MatrixXd> Bernstein::getFM() { return FMList; }
