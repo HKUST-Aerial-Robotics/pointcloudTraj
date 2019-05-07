@@ -44,7 +44,9 @@ double _pos[3];
 bool _map_ok   = false;
 bool _has_odom = false;
 
-pcl::PointCloud<pcl::PointXYZ> _cloud_all_map;
+pcl::PointCloud<pcl::PointXYZ> _cloud_all_map, _local_map, _local_map_ds;
+pcl::VoxelGrid<pcl::PointXYZ>  _voxel_sampler;
+sensor_msgs::PointCloud2 _local_map_pcd;
 void rcvPointCloudCallBack(const sensor_msgs::PointCloud2 & msg)
 {   
     if( _map_ok ) 
@@ -53,10 +55,9 @@ void rcvPointCloudCallBack(const sensor_msgs::PointCloud2 & msg)
     pcl::PointCloud<pcl::PointXYZ> cloud_input;
     pcl::fromROSMsg(msg, cloud_input);
     
-    pcl::VoxelGrid<pcl::PointXYZ>  VoxelSampler;
-    VoxelSampler.setLeafSize(0.2f, 0.2f, 0.2f);
-    VoxelSampler.setInputCloud( cloud_input.makeShared() );      
-    VoxelSampler.filter( _cloud_all_map );    
+    _voxel_sampler.setLeafSize(0.2f, 0.2f, 0.2f);
+    _voxel_sampler.setInputCloud( cloud_input.makeShared() );      
+    _voxel_sampler.filter( _cloud_all_map );    
 
     _kdtreeLocalMap.setInputCloud( _cloud_all_map.makeShared() ); 
     _map_ok = true;
@@ -78,9 +79,6 @@ void rcvOdometryCallbck(const nav_msgs::Odometry & msg)
     _pos[2] = msg.pose.pose.position.z;
 }
 
-pcl::PointCloud<pcl::PointXYZ> _local_map, _local_map_ds;
-pcl::VoxelGrid<pcl::PointXYZ>  _voxel_sampler;
-sensor_msgs::PointCloud2 _local_map_pcd;
 void pubSensedPoints()
 {     
     if(!_map_ok || !_has_odom)
