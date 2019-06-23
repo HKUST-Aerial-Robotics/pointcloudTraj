@@ -87,7 +87,7 @@ void RandomMapGeneration()
    cloudMap.is_dense = true;
 
    ROS_WARN("[Map Generator] Finished generate random map ");
-   cout<<cloudMap.size()<<endl;
+   //cout<<cloudMap.size()<<endl;
    kdtreeLocalMap.setInputCloud( cloudMap.makeShared() ); 
 
    _is_map_ok = true;
@@ -112,10 +112,12 @@ void rcvOdometryCallbck(const nav_msgs::Odometry odom)
 int global_map_vis_cnt = 0;
 void pubSensedPoints()
 {     
-   if(global_map_vis_cnt < 10 ){
-      pcl::toROSMsg(cloudMap, globalMap_pcd);
-      globalMap_pcd.header.frame_id = "map";
+   pcl::toROSMsg(cloudMap, globalMap_pcd);
+   globalMap_pcd.header.frame_id = "map";
+
+   if(global_map_vis_cnt < 20 ){
       _all_map_pub.publish(globalMap_pcd);
+      sleep(0.01);
    }
 
    global_map_vis_cnt ++;

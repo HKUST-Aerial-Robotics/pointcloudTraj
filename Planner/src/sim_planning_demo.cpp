@@ -483,6 +483,7 @@ int main (int argc, char** argv)
         _is_traj_exist      = false;
 
     }
+    
     bool status = ros::ok();
     while (status) {
         ros::spinOnce();

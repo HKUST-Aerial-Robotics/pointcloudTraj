@@ -57,9 +57,9 @@
         <param name="optimization/minimize_order" value="3"/>  <!-- 3 for minimize jerk, 2 for minimize acceleration -->
 </node>
  
-<!--  <node name="rviz" pkg="rviz" type="rviz" output="screen"
+ <node name="rviz" pkg="rviz" type="rviz" output="screen"
        args="-d $(find pointcloudTraj)/launch/rviz_config/rviz_config.rviz"> 
-</node> -->
+</node>
 
 <node name = "map_server" pkg = "pointcloudTraj" type = "map_server" output = "screen">    
         <remap from="~odometry"   to="/odom/fake_odom"/>

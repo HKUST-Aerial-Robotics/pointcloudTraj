@@ -50,14 +50,10 @@
         <param name="demoParam/is_limit_acc" value="false" />
         <param name="demoParam/is_print"     value="false" />
 </node>
- 
- <node name="rviz" pkg="rviz" type="rviz" output="screen"
-       args="-d $(find pointcloudTraj)/launch/rviz_config/rviz_config.rviz"> 
-</node>
 
 <node name ="map_server" pkg ="pointcloudTraj" type ="map_server" output = "screen">    
         <remap from="~odometry" to="/odom/fake_odom"/>
-        <remap from="~PointCloud" to="/random_map/all_map"/>
+        <remap from="~pointCloud" to="/random_map/all_map"/>
         <param name="LocalSensing/radius" value="30.0"/>        
         <param name="LocalSensing/rate"   value="10.0"/>        
         <param name="LocalSensing/std"    value="0.15"/>        
@@ -117,6 +113,10 @@
         <param name="init_y"  value="$(arg init_y)"/>
         <param name="end_x"   value="$(arg end_x)" />
         <param name="end_y"   value="$(arg end_y)" />
+</node>
+
+ <node name="rviz" pkg="rviz" type="rviz" output="screen"
+       args="-d $(find pointcloudTraj)/launch/rviz_config/rviz_config.rviz"> 
 </node>
 
  </launch>

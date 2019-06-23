@@ -18,6 +18,7 @@ Panels:
         - /Basic1/Robot1
         - /visPlanning1
         - /Map1
+        - /Map1/AllMap1
         - /Map1/LocalMap1/Autocompute Value Bounds1
       Splitter Ratio: 0.522099018
     Tree Height: 636
@@ -98,7 +99,7 @@ Visualization Manager:
           Marker Topic: /sim_planning_demo/flight_corridor
           Name: corridor_path
           Namespaces:
-            pcd_RRT/flight_corridor: true
+            {}
           Queue Size: 100
           Value: true
         - Class: rviz/Marker
@@ -318,25 +319,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 36.8539619
+      Distance: 101.922478
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -14.2871866
-        Y: -14.5073214
-        Z: 13.5559845
+        X: -16.4132156
+        Y: -17.0130501
+        Z: 14.3618164
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 1.54479635
+      Pitch: 1.26479661
       Target Frame: map
       Value: Orbit (rviz)
-      Yaw: 4.59945488
+      Yaw: 4.56944799
     Saved:
       - Class: rviz/Orbit
         Distance: 52.3142014
@@ -385,5 +386,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1761
-  X: 883
+  X: 799
   Y: 101
