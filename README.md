@@ -12,7 +12,10 @@ on the point cloud, which is the lowest level representation of range measuremen
 This is research code, any fitness for a particular purpose is disclaimed.
 
 **Related Paper**
-* **Flying on point clouds: Online trajectory generation and autonomous navigation for quadrotors in cluttered environments**, Fei Gao, William Wu, Wenliang Gao, Shaojie Shen, **Journal of Field Robotics** (2018).
+* **Flying on point clouds: Online trajectory generation and autonomous navigation for quadrotors in cluttered environments**, Fei Gao, William Wu, Wenliang Gao, Shaojie Shen, Journal of Field Robotics (**JFR**), 2018.
+
+* **Online quadrotor trajectory generation and autonomous navigation on point clouds**, Fei Gao, Shaojie Shen, IEEE International Symposium on Safety, Security, and Rescue Robotics (**SSRR**), 2016: 139-146. **Best Conference Paper Award**
+
 
 Video of this paper can be found at:
 
