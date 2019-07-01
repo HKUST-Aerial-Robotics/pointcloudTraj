@@ -1,4 +1,4 @@
-*What's New: Fix some bugs related to compile and missing depedencies.*
+*What's New: Fix some bugs related to compile and missing dependencies.*
 
 # pointcloudTraj
 
