@@ -1,3 +1,5 @@
+*What's New: Fix some bugs related to compile and missing depedencies.*
+
 # pointcloudTraj
 
 ## 1.Introduction
