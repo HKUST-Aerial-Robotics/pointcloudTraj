@@ -12,9 +12,10 @@ find_package(catkin REQUIRED COMPONENTS
     sensor_msgs
     quadrotor_msgs
     tf
-    kdtree
-    PCL REQUIRED
-    Eigen3 REQUIRED)
+    kdtree)
+
+find_package(Eigen3 REQUIRED)
+find_package(PCL REQUIRED)
 
 catkin_package(
   INCLUDE_DIRS include
