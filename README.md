@@ -18,6 +18,8 @@ This is research code, any fitness for a particular purpose is disclaimed.
 
 * **Online quadrotor trajectory generation and autonomous navigation on point clouds**, Fei Gao, Shaojie Shen, IEEE International Symposium on Safety, Security, and Rescue Robotics (**SSRR**), 2016: 139-146. **Best Conference Paper Award**
 
+![](pointPlaning.gif)
+
 
 Video of this paper can be found at:
 
